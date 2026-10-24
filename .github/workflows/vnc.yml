@@ -29,10 +29,18 @@ jobs:
       - name: Virtual display
         run: |
           brew install --cask betterdisplay 2>&1 || true
-          open -a BetterDisplay 2>&1 || true
-          sleep 15
-          /Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay create -type=VirtualScreen -virtualScreenName=Virtual -aspectWidth=16 -aspectHeight=9 -virtualScreenHiDPI=off 2>&1 || true
+          sudo xattr -dr com.apple.quarantine /Applications/BetterDisplay.app 2>&1 || true
+          open /Applications/BetterDisplay.app 2>&1 || true
+          for i in $(seq 1 12); do
+            pgrep -x BetterDisplay >/dev/null && break
+            echo "waiting for app ($i)"; sleep 5
+          done
+          pgrep -lx BetterDisplay || echo "APP NOT RUNNING"
           sleep 10
+          betterdisplaycli create -type=VirtualScreen -virtualScreenName=Virtual -aspectWidth=16 -aspectHeight=9 -virtualScreenHiDPI=off 2>&1 || true
+          sleep 5
+          betterdisplaycli set -name=Virtual -connected=on 2>&1 || true
+          sleep 5
           echo "== displays =="
           system_profiler SPDisplaysDataType | head -40 || true
           sudo killall screensharingd 2>/dev/null || true
