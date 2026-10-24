@@ -1,0 +1,35 @@
+name: macOS VNC
+
+on:
+  workflow_dispatch:
+
+jobs:
+  vnc:
+    runs-on: macos-26
+    timeout-minutes: 360
+    steps:
+      - name: Enable VNC and set password
+        run: |
+          sudo defaults write /var/db/launchd.db/com.apple.launchd/overrides.plist com.apple.screensharing -dict Disabled -bool false
+          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.screensharing.plist || true
+          sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+            -activate -configure -access -on \
+            -configure -allowAccessFor -allUsers \
+            -configure -restart -agent -privs -all \
+            -clientopts -setvnclegacy -vnclegacy yes \
+            -clientopts -setvncpw -vncpw MyPass123
+          sudo dscl . -passwd /Users/runner MyPass123
+
+      - name: Start ngrok tunnel
+        env:
+          NGROK_AUTH_TOKEN: ${{ 33YpQf2cZeFvYmmxLHJPnedsykS_47RNBEysVKzqezTTvwCZ3 }}
+        run: |
+          brew install ngrok
+          ngrok config add-authtoken "$NGROK_AUTH_TOKEN"
+          ngrok tcp 5900 --log=stdout > ngrok.log &
+          sleep 10
+          echo "ADDRESS:"
+          curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url'
+
+      - name: Keep machine alive
+        run: sleep 21000
