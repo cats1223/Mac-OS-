@@ -18,7 +18,7 @@ jobs:
             -configure -restart -agent -privs -all \
             -clientopts -setvnclegacy -vnclegacy yes \
             -clientopts -setvncpw -vncpw MyPass123
-          sudo dscl . -passwd /Users/runner MyPass123
+          sudo dscl . -passwd /Users/runner MyPass123 || true
 
       - name: Start ngrok tunnel
         env:
