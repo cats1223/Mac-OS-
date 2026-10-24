@@ -20,14 +20,14 @@ jobs:
             -clientopts -setvncpw -vncpw MyPass123
           sudo dscl . -passwd /Users/runner MyPass123 || true
 
-      - name: Screen diagnostics
+      - name: Screen permissions
         run: |
-          echo "== SIP =="; csrutil status || true
-          echo "== console user =="; stat -f "%Su" /dev/console || true; who || true
-          echo "== displays =="; system_profiler SPDisplaysDataType | head -30 || true
-          echo "== TCC attempt =="
-          sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" "INSERT OR REPLACE INTO access VALUES('kTCCServiceScreenCapture','/System/Library/CoreServices/screensharingd',1,2,4,1,NULL,NULL,0,'UNUSED',NULL,0,1687786159);" 2>&1 || true
+          for svc in kTCCServiceScreenCapture kTCCServicePostEvent kTCCServiceAccessibility; do
+            sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" "INSERT OR REPLACE INTO access (service,client,client_type,auth_value,auth_reason,auth_version,indirect_object_identifier,flags,last_modified) VALUES ('$svc','com.apple.screensharing.agent',0,2,4,1,'UNUSED',0,strftime('%s','now')),('$svc','/System/Library/CoreServices/screensharingd',1,2,4,1,'UNUSED',0,strftime('%s','now'));" 2>&1 || true
+          done
           sudo killall screensharingd 2>/dev/null || true
+          echo "== displays =="
+          system_profiler SPDisplaysDataType | head -30 || true
 
       - name: Start ngrok tunnel
         env:
