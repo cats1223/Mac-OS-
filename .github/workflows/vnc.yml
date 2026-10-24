@@ -25,9 +25,17 @@ jobs:
           for svc in kTCCServiceScreenCapture kTCCServicePostEvent kTCCServiceAccessibility; do
             sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" "INSERT OR REPLACE INTO access (service,client,client_type,auth_value,auth_reason,auth_version,indirect_object_identifier,flags,last_modified) VALUES ('$svc','com.apple.screensharing.agent',0,2,4,1,'UNUSED',0,strftime('%s','now')),('$svc','/System/Library/CoreServices/screensharingd',1,2,4,1,'UNUSED',0,strftime('%s','now'));" 2>&1 || true
           done
-          sudo killall screensharingd 2>/dev/null || true
+
+      - name: Virtual display
+        run: |
+          brew install --cask betterdisplay 2>&1 || true
+          open -a BetterDisplay 2>&1 || true
+          sleep 15
+          /Applications/BetterDisplay.app/Contents/MacOS/BetterDisplay create -type=VirtualScreen -virtualScreenName=Virtual -aspectWidth=16 -aspectHeight=9 -virtualScreenHiDPI=off 2>&1 || true
+          sleep 10
           echo "== displays =="
-          system_profiler SPDisplaysDataType | head -30 || true
+          system_profiler SPDisplaysDataType | head -40 || true
+          sudo killall screensharingd 2>/dev/null || true
 
       - name: Start ngrok tunnel
         env:
